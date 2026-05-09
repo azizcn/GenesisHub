@@ -188,7 +188,7 @@ export default function IdeaAgentView() {
                     <div className="glass-card rounded-2xl rounded-tl-sm px-4 py-3 max-w-md">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-semibold text-neon-green">Copilot</span>
-                        <TTSButton size={12} />
+                        <TTSButton size={12} text={msg.text} />
                       </div>
                       <p className="text-sm text-foreground/80 whitespace-pre-line leading-relaxed">{msg.text}</p>
                     </div>
@@ -232,7 +232,7 @@ export default function IdeaAgentView() {
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-xs font-semibold text-muted-dim uppercase tracking-wider">{t("copilot.whatItDoes")}</p>
-                        <TTSButton size={12} />
+                        <TTSButton size={12} text={idea.whatItDoes} />
                       </div>
                       <p className="text-sm text-foreground/80 leading-relaxed">{idea.whatItDoes}</p>
                     </div>

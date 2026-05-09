@@ -45,15 +45,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [locale, setLocale] = useState<Locale>("en");
 
-  // Apply theme class to <html>
+  // Apply theme to <html> — set CSS variables directly for bulletproof theming
   useEffect(() => {
     const html = document.documentElement;
     if (theme === "light") {
       html.classList.add("light");
       html.classList.remove("dark");
+      const vars: Record<string, string> = {
+        "--background": "#f8fafc",
+        "--foreground": "#1e293b",
+        "--neon-green": "#059669",
+        "--neon-purple": "#7c3aed",
+        "--neon-yellow": "#d97706",
+        "--card-bg": "rgba(255,255,255,0.85)",
+        "--card-border": "rgba(148,163,184,0.3)",
+        "--glass-bg": "rgba(255,255,255,0.9)",
+        "--code-bg": "#f1f5f9",
+        "--code-border": "rgba(148,163,184,0.3)",
+        "--muted": "#64748b",
+        "--muted-dim": "#94a3b8",
+        "--surface": "rgba(0,0,0,0.03)",
+        "--surface-hover": "rgba(0,0,0,0.06)",
+        "--nav-bg": "rgba(255,255,255,0.92)",
+        "--footer-bg": "rgba(248,250,252,0.8)",
+      };
+      Object.entries(vars).forEach(([k, v]) => html.style.setProperty(k, v));
     } else {
       html.classList.add("dark");
       html.classList.remove("light");
+      // Remove inline overrides so :root defaults apply
+      [
+        "--background", "--foreground", "--neon-green", "--neon-purple", "--neon-yellow",
+        "--card-bg", "--card-border", "--glass-bg", "--code-bg", "--code-border",
+        "--muted", "--muted-dim", "--surface", "--surface-hover", "--nav-bg", "--footer-bg",
+      ].forEach((k) => html.style.removeProperty(k));
     }
   }, [theme]);
 

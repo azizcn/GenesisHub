@@ -6,6 +6,7 @@ import {
   BookOpen, CheckCircle2, ChevronRight, Bot, Variable, Boxes, Cpu, Rocket, Lock, ArrowLeft, Shield, Puzzle,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import type { Locale } from "../i18n/translations";
 import type { Language } from "../context/AppContext";
 import DragDropQuiz from "./DragDropQuiz";
 import TTSButton from "./TTSButton";
@@ -16,7 +17,7 @@ interface ModuleContent {
   icon: React.ElementType;
   color: string;
   analogies: Record<Language, string[]>;
-  codeExample: string;
+  codeExample: Record<Locale, string>;
 }
 
 const modules: ModuleContent[] = [
@@ -47,7 +48,8 @@ const modules: ModuleContent[] = [
         "Every box has a specific **type** — `i32` holds whole numbers, `bool` holds true/false, `String` holds text.",
       ],
     },
-    codeExample: `// Immutable variable (can't change)
+    codeExample: {
+      en: `// Immutable variable (can't change)
 let name: &str = "Solana Builder";
 
 // Mutable variable (can change)
@@ -59,6 +61,19 @@ let is_active = true;  // Rust knows this is bool
 
 // Option type — might or might not have a value
 let maybe_balance: Option<u64> = Some(1000);`,
+      tr: `// Değiştirilemez değişken (değiştirilemez)
+let name: &str = "Solana Builder";
+
+// Değiştirilebilir değişken (değiştirilebilir)
+let mut score: u32 = 0;
+score += 10;  // 'mut' sayesinde bu çalışır
+
+// Tür çıkarımı — Rust türü kendisi belirler
+let is_active = true;  // Rust bunun bool olduğunu bilir
+
+// Option türü — değer olabilir veya olmayabilir
+let maybe_balance: Option<u64> = Some(1000);`,
+    },
   },
   {
     title: "Structs & Enums",
@@ -87,7 +102,8 @@ let maybe_balance: Option<u64> = Some(1000);`,
         "Once you have a recipe (struct), you can make one: `let alice = Person { name: String::from(\"Alice\"), age: 25 };`",
       ],
     },
-    codeExample: `// Define a struct — the blueprint
+    codeExample: {
+      en: `// Define a struct — the blueprint
 pub struct TokenAccount {
     pub owner: Pubkey,
     pub balance: u64,
@@ -110,6 +126,30 @@ impl TokenAccount {
         self.balance += amount;
     }
 }`,
+      tr: `// Bir struct tanımla — şablon
+pub struct TokenAccount {
+    pub owner: Pubkey,
+    pub balance: u64,
+    pub is_frozen: bool,
+}
+
+// Bir enum tanımla — olasılıklar kümesi
+pub enum TransactionStatus {
+    Pending,
+    Confirmed { slot: u64 },
+    Failed(String),
+}
+
+// impl bloğu ile metotlar ekle
+impl TokenAccount {
+    pub fn new(owner: Pubkey) -> Self {
+        Self { owner, balance: 0, is_frozen: false }
+    }
+    pub fn deposit(&mut self, amount: u64) {
+        self.balance += amount;
+    }
+}`,
+    },
   },
   {
     title: "Ownership & Borrowing",
@@ -138,7 +178,8 @@ impl TokenAccount {
         "**Borrowing** with `&` means \"look but don't touch.\" Borrowing with `&mut` means \"you can change it, but only you.\"",
       ],
     },
-    codeExample: `// Ownership — each value has one owner
+    codeExample: {
+      en: `// Ownership — each value has one owner
 let s1 = String::from("hello");
 let s2 = s1;  // s1 is MOVED to s2
 // println!("{}", s1);  // ERROR! s1 is no longer valid
@@ -156,6 +197,25 @@ let len = calculate_length(&my_string);
 fn add_world(s: &mut String) {
     s.push_str(", world!");
 }`,
+      tr: `// Sahiplik — her değerin bir sahibi vardır
+let s1 = String::from("hello");
+let s2 = s1;  // s1, s2'ye TAŞINDI
+// println!("{}", s1);  // HATA! s1 artık geçerli değil
+
+// Ödünç alma — sahipliği vermeden kullandırma
+fn calculate_length(s: &String) -> usize {
+    s.len()  // s'yi okuyabiliriz ama sahibi değiliz
+}
+
+let my_string = String::from("hello");
+let len = calculate_length(&my_string);
+// my_string hâlâ geçerli!
+
+// Değiştirilebilir ödünç alma — yazma erişimi
+fn add_world(s: &mut String) {
+    s.push_str(", world!");
+}`,
+    },
   },
   {
     title: "Traits & Implementations",
@@ -184,7 +244,8 @@ fn add_world(s: &mut String) {
         "`#[derive(Debug)]` is a magic shortcut — it automatically teaches your struct how to print itself for debugging.",
       ],
     },
-    codeExample: `// Define a trait — the contract
+    codeExample: {
+      en: `// Define a trait — the contract
 pub trait Stakeable {
     fn stake(&mut self, amount: u64) -> Result<(), String>;
     fn unstake(&mut self, amount: u64) -> Result<(), String>;
@@ -208,6 +269,31 @@ impl Stakeable for TokenAccount {
         self.balance / 100  // 1% reward
     }
 }`,
+      tr: `// Bir trait tanımla — sözleşme
+pub trait Stakeable {
+    fn stake(&mut self, amount: u64) -> Result<(), String>;
+    fn unstake(&mut self, amount: u64) -> Result<(), String>;
+    fn rewards(&self) -> u64;
+}
+
+// Trait'i bir struct için uygula
+impl Stakeable for TokenAccount {
+    fn stake(&mut self, amount: u64) -> Result<(), String> {
+        if self.balance < amount {
+            return Err("Yetersiz bakiye".into());
+        }
+        self.balance -= amount;
+        Ok(())
+    }
+    fn unstake(&mut self, amount: u64) -> Result<(), String> {
+        self.balance += amount;
+        Ok(())
+    }
+    fn rewards(&self) -> u64 {
+        self.balance / 100  // %1 ödül
+    }
+}`,
+    },
   },
   {
     title: "Solana & Anchor",
@@ -236,7 +322,8 @@ impl Stakeable for TokenAccount {
         "Anchor is a helpful toolkit that makes building programs much easier. It handles the complicated parts!",
       ],
     },
-    codeExample: `use anchor_lang::prelude::*;
+    codeExample: {
+      en: `use anchor_lang::prelude::*;
 
 declare_id!("YourProgramId11111111111111111");
 
@@ -244,12 +331,14 @@ declare_id!("YourProgramId11111111111111111");
 pub mod my_first_program {
     use super::*;
 
+    // Anyone can call this to create a counter
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         let counter = &mut ctx.accounts.counter;
         counter.count = 0;
         Ok(())
     }
 
+    // Anyone can call this to increment
     pub fn increment(ctx: Context<Increment>) -> Result<()> {
         let counter = &mut ctx.accounts.counter;
         counter.count += 1;
@@ -261,11 +350,39 @@ pub mod my_first_program {
 pub struct Counter {
     pub count: u64,
 }`,
+      tr: `use anchor_lang::prelude::*;
+
+declare_id!("YourProgramId11111111111111111");
+
+#[program]
+pub mod my_first_program {
+    use super::*;
+
+    // Herkes bunu çağırarak sayaç oluşturabilir
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        let counter = &mut ctx.accounts.counter;
+        counter.count = 0;
+        Ok(())
+    }
+
+    // Herkes bunu çağırarak artırabilir
+    pub fn increment(ctx: Context<Increment>) -> Result<()> {
+        let counter = &mut ctx.accounts.counter;
+        counter.count += 1;
+        Ok(())
+    }
+}
+
+#[account]
+pub struct Counter {
+    pub count: u64,
+}`,
+    },
   },
 ];
 
 export default function LearningHub() {
-  const { selectedLanguage, languageLabel, setView, completedModules, completeModule, t } = useApp();
+  const { selectedLanguage, languageLabel, setView, completedModules, completeModule, t, locale } = useApp();
   const lang = selectedLanguage || "none";
   const [activeModule, setActiveModule] = useState(0);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -401,7 +518,7 @@ export default function LearningHub() {
                                 <span className="text-xs text-muted-dim">•</span>
                                 <span className="text-xs text-muted-dim">{t("hub.step")} {i + 1}</span>
                               </div>
-                              <TTSButton size={14} />
+                              <TTSButton size={14} text={text} />
                             </div>
                             <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">
                               {text.split("`").map((part, pi) =>
@@ -430,7 +547,7 @@ export default function LearningHub() {
                       <div className="w-3 h-3 rounded-full bg-green-500/80" />
                       <span className="ml-2 text-xs text-muted-dim font-mono">example.rs</span>
                     </div>
-                    <pre className="text-sm leading-relaxed text-foreground/80 whitespace-pre overflow-x-auto"><code>{mod.codeExample}</code></pre>
+                    <pre className="text-sm leading-relaxed text-foreground/80 whitespace-pre overflow-x-auto"><code>{mod.codeExample[locale]}</code></pre>
                   </div>
                 </motion.div>
 

@@ -240,7 +240,7 @@ export default function DragDropQuiz({ moduleIndex, onComplete }: DragDropQuizPr
               <div className="flex-1">
                 <p className="font-bold text-neon-green flex items-center gap-2"><CheckCircle2 size={16} /> {t("quiz.correct")}</p>
                 <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{quiz.successExplanation[lang]}</p>
-                <div className="mt-2"><TTSButton size={14} /></div>
+                <div className="mt-2"><TTSButton size={14} text={quiz.successExplanation[lang]} /></div>
               </div>
             </motion.div>
           )}
