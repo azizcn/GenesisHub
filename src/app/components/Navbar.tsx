@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Menu,
   X,
@@ -11,13 +13,13 @@ import {
   Languages,
   Sun,
   Moon,
+  Library,
+  Blocks,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 
 export default function Navbar() {
   const {
-    currentView,
-    setView,
     selectedLanguage,
     languageLabel,
     resetAll,
@@ -29,6 +31,8 @@ export default function Navbar() {
   } = useApp();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -37,9 +41,16 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { label: t("nav.learningHub"), view: "hub" as const, icon: BookOpen, show: !!selectedLanguage },
-    { label: t("nav.colosseumCopilot"), view: "idea-agent" as const, icon: Rocket, show: !!selectedLanguage },
+    { label: t("nav.blockchain101") || "Blockchain 101", href: "/blockchain101", icon: Library, show: true },
+    { label: t("nav.builder") || "Builder", href: "/builder", icon: Blocks, show: true },
+    { label: t("nav.learningHub"), href: "/learn", icon: BookOpen, show: !!selectedLanguage },
+    { label: t("nav.colosseumCopilot"), href: "/copilot", icon: Rocket, show: !!selectedLanguage },
   ];
+
+  const handleResetLanguage = () => {
+    resetAll();
+    router.push("/");
+  };
 
   return (
     <motion.nav
@@ -47,7 +58,7 @@ export default function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-        isScrolled || currentView !== "onboarding"
+        isScrolled || pathname !== "/"
           ? "bg-nav-bg backdrop-blur-xl border-b border-card-border shadow-lg"
           : "bg-transparent"
       }`}
@@ -55,10 +66,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <button
-            onClick={() => (selectedLanguage ? setView("hub") : resetAll())}
-            className="flex items-center gap-2 group"
-          >
+          <Link href={selectedLanguage ? "/learn" : "/"} className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-green to-neon-purple flex items-center justify-center">
               <Zap size={18} className="text-background" />
             </div>
@@ -66,25 +74,25 @@ export default function Navbar() {
               {t("nav.brand")}
               <span className="text-neon-green">{t("nav.brandAccent")}</span>
             </span>
-          </button>
+          </Link>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks
               .filter((l) => l.show)
               .map((link) => (
-                <button
-                  key={link.view}
-                  onClick={() => setView(link.view)}
+                <Link
+                  key={link.href}
+                  href={link.href}
                   className={`px-4 py-2 text-sm rounded-lg transition-colors duration-200 flex items-center gap-2 ${
-                    currentView === link.view
+                    pathname === link.href
                       ? "text-neon-green bg-neon-green/10"
                       : "text-muted hover:text-neon-green hover:bg-surface"
                   }`}
                 >
                   <link.icon size={15} />
                   {link.label}
-                </button>
+                </Link>
               ))}
           </div>
 
@@ -125,7 +133,7 @@ export default function Navbar() {
 
             {selectedLanguage && (
               <button
-                onClick={resetAll}
+                onClick={handleResetLanguage}
                 className="px-3 py-1.5 text-xs text-muted-dim hover:text-foreground transition-colors rounded-lg border border-card-border hover:border-muted"
               >
                 {t("nav.changeLanguage")}
@@ -179,27 +187,25 @@ export default function Navbar() {
               {navLinks
                 .filter((l) => l.show)
                 .map((link) => (
-                  <button
-                    key={link.view}
-                    onClick={() => {
-                      setView(link.view);
-                      setIsMobileOpen(false);
-                    }}
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsMobileOpen(false)}
                     className={`w-full text-left flex items-center gap-2 px-4 py-3 rounded-lg transition-colors ${
-                      currentView === link.view
+                      pathname === link.href
                         ? "text-neon-green bg-neon-green/10"
                         : "text-foreground/80 hover:text-neon-green hover:bg-surface"
                     }`}
                   >
                     <link.icon size={16} />
                     {link.label}
-                  </button>
+                  </Link>
                 ))}
 
               {selectedLanguage && (
                 <button
                   onClick={() => {
-                    resetAll();
+                    handleResetLanguage();
                     setIsMobileOpen(false);
                   }}
                   className="w-full text-left px-4 py-3 text-muted-dim hover:text-foreground rounded-lg transition-colors text-sm"

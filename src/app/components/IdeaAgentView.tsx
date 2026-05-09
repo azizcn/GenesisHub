@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Wand2, Loader2, Copy, Check, ArrowLeft, Rocket, RefreshCw, Sparkles, Terminal, ChevronDown, ChevronUp } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useApp } from "../context/AppContext";
 import type { Language } from "../context/AppContext";
 import TTSButton from "./TTSButton";
@@ -83,7 +84,8 @@ Start by scaffolding the Anchor project structure and implementing the core prog
 }
 
 export default function IdeaAgentView() {
-  const { selectedLanguage, languageLabel, setView, completedModules, t, locale } = useApp();
+  const { selectedLanguage, languageLabel, completedModules, t, locale } = useApp();
+  const router = useRouter();
   const lang = selectedLanguage || "none";
 
   const [loading, setLoading] = useState(false);
@@ -153,7 +155,7 @@ export default function IdeaAgentView() {
       <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <button onClick={() => setView("hub")} className="p-2 rounded-lg bg-card-bg border border-card-border text-muted hover:text-foreground transition-colors"><ArrowLeft size={16} /></button>
+            <button onClick={() => router.push("/learn")} className="p-2 rounded-lg bg-card-bg border border-card-border text-muted hover:text-foreground transition-colors"><ArrowLeft size={16} /></button>
             <div>
               <h1 className="text-xl font-bold flex items-center gap-2">
                 <span className="gradient-text">{t("copilot.title")}</span>
@@ -323,7 +325,7 @@ export default function IdeaAgentView() {
               </motion.button>
             ) : idea && !loading ? (
               <div className="flex gap-3">
-                <button onClick={() => setView("hub")} className="flex-1 px-4 py-3 rounded-xl font-medium border border-card-border text-muted hover:text-foreground transition-colors text-sm">{t("copilot.backToLearning")}</button>
+                <button onClick={() => router.push("/learn")} className="flex-1 px-4 py-3 rounded-xl font-medium border border-card-border text-muted hover:text-foreground transition-colors text-sm">{t("copilot.backToLearning")}</button>
                 <button onClick={regenerate} className="flex-1 px-4 py-3 rounded-xl font-semibold bg-gradient-to-r from-neon-green to-neon-purple text-background hover:brightness-110 transition-all text-sm flex items-center justify-center gap-2">
                   <Wand2 size={16} /> {t("copilot.generateAnother")}
                 </button>

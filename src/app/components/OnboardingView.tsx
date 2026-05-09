@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Code2, Braces, Hash, Globe, ChevronRight, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useApp, type Language } from "../context/AppContext";
 
 export default function OnboardingView() {
-  const { setLanguage, setView, t } = useApp();
+  const { setLanguage, t } = useApp();
+  const router = useRouter();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<Language | null>(null);
 
@@ -45,7 +47,7 @@ export default function OnboardingView() {
     setSelectedId(lang);
     setTimeout(() => {
       setLanguage(lang);
-      setView("hub");
+      router.push("/learn");
     }, 600);
   };
 

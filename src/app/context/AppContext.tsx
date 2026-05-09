@@ -5,11 +5,9 @@ import translations, { type Locale } from "../i18n/translations";
 
 export type Language = "javascript" | "python" | "csharp" | "none";
 export type Theme = "dark" | "light";
-export type View = "onboarding" | "hub" | "idea-agent";
 
 export interface AppState {
   selectedLanguage: Language | null;
-  currentView: View;
   completedModules: number[];
   currentModule: number;
   theme: Theme;
@@ -18,7 +16,6 @@ export interface AppState {
 
 interface AppContextType extends AppState {
   setLanguage: (lang: Language) => void;
-  setView: (view: View) => void;
   setCurrentModule: (mod: number) => void;
   completeModule: (mod: number) => void;
   resetAll: () => void;
@@ -39,7 +36,6 @@ const LANGUAGE_LABELS: Record<Language, string> = {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
-  const [currentView, setCurrentView] = useState<View>("onboarding");
   const [completedModules, setCompletedModules] = useState<number[]>([]);
   const [currentModule, setCurrentModuleState] = useState(0);
   const [theme, setTheme] = useState<Theme>("dark");
@@ -86,10 +82,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSelectedLanguage(lang);
   }, []);
 
-  const setView = useCallback((view: View) => {
-    setCurrentView(view);
-  }, []);
-
   const setCurrentModule = useCallback((mod: number) => {
     setCurrentModuleState(mod);
   }, []);
@@ -100,7 +92,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const resetAll = useCallback(() => {
     setSelectedLanguage(null);
-    setCurrentView("onboarding");
     setCompletedModules([]);
     setCurrentModuleState(0);
   }, []);
@@ -133,13 +124,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider
       value={{
         selectedLanguage,
-        currentView,
         completedModules,
         currentModule,
         theme,
         locale,
         setLanguage,
-        setView,
         setCurrentModule,
         completeModule,
         resetAll,

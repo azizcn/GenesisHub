@@ -85,7 +85,7 @@ export default function TTSButton({ text = "", size = 16, className = "" }: TTSB
                 key={i}
                 className="w-[3px] rounded-full bg-neon-green"
                 animate={{
-                  height: [4, 14 + Math.random() * 6, 6, 18, 4],
+                  height: [4, 14 + (i % 3) * 2, 6, 18, 4],
                 }}
                 transition={{
                   duration: 0.8 + i * 0.1,

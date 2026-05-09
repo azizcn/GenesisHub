@@ -361,3 +361,135 @@ html.light .drop-zone {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.5);
 }
+
+/* ===================================================================== */
+/*  BUILDER — React Flow overrides & bullet handles                      */
+/* ===================================================================== */
+
+/* ── React Flow canvas background ──────────────────────────────────── */
+.builder-canvas .react-flow__background {
+  opacity: 1;
+}
+
+.builder-canvas .react-flow__edge-path {
+  stroke-linecap: round;
+}
+
+.builder-canvas .react-flow__node {
+  cursor: grab;
+}
+
+.builder-canvas .react-flow__node:active {
+  cursor: grabbing;
+}
+
+/* ── MiniMap ───────────────────────────────────────────────────────── */
+.builder-canvas .react-flow__minimap {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Bullet-shaped handles — VERTICAL (mermi şekli, top-down) ─────── */
+/*   Source: bottom of node, bullet pointing DOWN                      */
+/*   Target: top of node, funnel/bullet pointing UP                    */
+.bullet-handle-source {
+  width: 14px;
+  height: 12px;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 60%, 50% 100%, 0% 60%);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -4px;
+  pointer-events: none;
+  transition: filter 0.2s ease;
+}
+
+.bullet-handle-target {
+  width: 14px;
+  height: 12px;
+  clip-path: polygon(50% 0%, 100% 40%, 100% 100%, 0% 100%, 0% 40%);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -4px;
+  pointer-events: none;
+  transition: filter 0.2s ease;
+}
+
+/* Glow on parent node hover */
+.react-flow__node:hover .bullet-handle-source,
+.react-flow__node:hover .bullet-handle-target {
+  filter: brightness(1.4) drop-shadow(0 0 6px currentColor);
+}
+
+/* Override React Flow default handle appearance */
+.builder-canvas .react-flow__handle {
+  width: 16px !important;
+  height: 14px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+/* ── Bullet badge (category label on nodes) ────────────────────────── */
+.bullet-badge {
+  clip-path: polygon(0% 50%, 8% 0%, 100% 0%, 100% 100%, 8% 100%);
+  padding-left: 14px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0 4px 4px 0;
+  line-height: 1;
+  height: 20px;
+}
+
+/* Small bullet dot for toolbox items */
+.bullet-badge-sm {
+  width: 8px;
+  height: 6px;
+  clip-path: polygon(0% 0%, 70% 0%, 100% 50%, 70% 100%, 0% 100%);
+  flex-shrink: 0;
+}
+
+/* ── React Flow controls override for dark/light ──────────────────── */
+.builder-canvas .react-flow__controls {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2) !important;
+}
+
+.builder-canvas .react-flow__controls button {
+  background: transparent !important;
+  border: none !important;
+  color: var(--muted) !important;
+  fill: var(--muted) !important;
+}
+
+.builder-canvas .react-flow__controls button:hover {
+  background: var(--surface) !important;
+  color: var(--foreground) !important;
+  fill: var(--foreground) !important;
+}
+
+/* ── Selection box ─────────────────────────────────────────────────── */
+.builder-canvas .react-flow__selection {
+  background: rgba(20, 241, 149, 0.05) !important;
+  border: 1px solid rgba(20, 241, 149, 0.3) !important;
+}
+
+html.light .builder-canvas .react-flow__selection {
+  background: rgba(5, 150, 105, 0.05) !important;
+  border: 1px solid rgba(5, 150, 105, 0.3) !important;
+}
+
+/* ── Edge animated dash ────────────────────────────────────────────── */
+.builder-canvas .react-flow__edge.animated path {
+  stroke-dasharray: 5;
+  animation: edge-dash 0.5s linear infinite;
+}
+
+@keyframes edge-dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}

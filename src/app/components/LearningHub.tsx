@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, CheckCircle2, ChevronRight, Bot, Variable, Boxes, Cpu, Rocket, Lock, ArrowLeft, Shield, Puzzle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useApp } from "../context/AppContext";
 import type { Locale } from "../i18n/translations";
 import type { Language } from "../context/AppContext";
@@ -496,7 +497,8 @@ const analogiesTr: Record<number, Record<Language, string[]>> = {
 };
 
 export default function LearningHub() {
-  const { selectedLanguage, languageLabel, setView, completedModules, completeModule, t, locale } = useApp();
+  const { selectedLanguage, languageLabel, completedModules, completeModule, t, locale } = useApp();
+  const router = useRouter();
   const lang = selectedLanguage || "none";
   const [activeModule, setActiveModule] = useState(0);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -537,7 +539,7 @@ export default function LearningHub() {
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <button onClick={() => setView("onboarding")} className="p-2 rounded-lg bg-card-bg border border-card-border text-muted hover:text-foreground transition-colors">
+              <button onClick={() => router.push("/")} className="p-2 rounded-lg bg-card-bg border border-card-border text-muted hover:text-foreground transition-colors">
                 <ArrowLeft size={16} />
               </button>
               <h1 className="text-2xl sm:text-3xl font-bold"><span className="gradient-text">{t("hub.title")}</span></h1>
@@ -546,7 +548,7 @@ export default function LearningHub() {
               {t("hub.personalizedFor")} <span className="text-neon-green font-semibold">{languageLabel}</span> {t("hub.developers")}
             </p>
           </div>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setView("idea-agent")} className="px-5 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-neon-green to-neon-purple text-background flex items-center gap-2 text-sm shadow-lg shadow-neon-green/10">
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => router.push("/copilot")} className="px-5 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-neon-green to-neon-purple text-background flex items-center gap-2 text-sm shadow-lg shadow-neon-green/10">
             <Rocket size={16} /> {t("hub.colosseumCopilot")}
           </motion.button>
         </motion.div>
@@ -591,7 +593,7 @@ export default function LearningHub() {
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mt-4 p-3 rounded-xl bg-neon-green/10 border border-neon-green/20 text-center">
                   <p className="text-sm font-bold text-neon-green">{t("hub.allComplete")}</p>
                   <p className="text-xs text-muted mt-1">{t("hub.readyForProject")}</p>
-                  <button onClick={() => setView("idea-agent")} className="mt-2 px-4 py-1.5 rounded-lg bg-neon-green text-background text-xs font-semibold hover:brightness-110 transition-all">{t("hub.getProjectIdea")}</button>
+                  <button onClick={() => router.push("/copilot")} className="mt-2 px-4 py-1.5 rounded-lg bg-neon-green text-background text-xs font-semibold hover:brightness-110 transition-all">{t("hub.getProjectIdea")}</button>
                 </motion.div>
               )}
             </div>
