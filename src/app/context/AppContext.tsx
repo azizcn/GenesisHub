@@ -1,7 +1,10 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import translations, { type Locale } from "../i18n/translations";
+import "../i18n"; // Import i18n setup
+import { useTranslation, I18nextProvider } from "react-i18next";
 
 export type Language = "javascript" | "python" | "csharp" | "none";
 export type Theme = "dark" | "light";
@@ -39,7 +42,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [completedModules, setCompletedModules] = useState<number[]>([]);
   const [currentModule, setCurrentModuleState] = useState(0);
   const [theme, setTheme] = useState<Theme>("dark");
-  const [locale, setLocale] = useState<Locale>("en");
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language as Locale;
 
   // Apply theme to <html> — set CSS variables directly for bulletproof theming
   useEffect(() => {
@@ -101,21 +105,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleLocale = useCallback(() => {
-    setLocale((prev) => (prev === "en" ? "tr" : "en"));
-  }, []);
+    const newLang = locale === "en" ? "tr" : "en";
+    i18n.changeLanguage(newLang);
+  }, [locale, i18n]);
 
-  // Translation function with variable interpolation
-  const t = useCallback(
+  // Translation function with variable interpolation wrapper to keep backward compatibility
+  const tWrapper = useCallback(
     (key: string, vars?: Record<string, string>): string => {
-      let text = translations[locale][key] || translations["en"][key] || key;
-      if (vars) {
-        Object.entries(vars).forEach(([k, v]) => {
-          text = text.replace(new RegExp(`\\{${k}\\}`, "g"), v);
-        });
-      }
-      return text;
+      return t(key, vars);
     },
-    [locale]
+    [t]
   );
 
   const languageLabel = selectedLanguage ? LANGUAGE_LABELS[selectedLanguage] : "";
@@ -134,11 +133,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         resetAll,
         toggleTheme,
         toggleLocale,
-        t,
+        t: tWrapper,
         languageLabel,
       }}
     >
-      {children}
+      <I18nextProvider i18n={i18n}>
+        {children}
+      </I18nextProvider>
     </AppContext.Provider>
   );
 }

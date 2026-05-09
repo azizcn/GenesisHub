@@ -81,24 +81,27 @@ export function generateAnchorCode(nodes: Node[], edges: Edge[]): string {
   lines.push("");
 
   // ── Collect nodes by type ───────────────────────────────────────────
+  const getType = (n: Node) => (n.data as Record<string, unknown>).originalType || n.type;
+
   const stateStructs = nodes.filter(
-    (n) => n.type === "structNode" && (n.data as StructNodeData).nodeCategory === "state"
+    (n) => getType(n) === "structNode" && (n.data as StructNodeData).nodeCategory === "state"
   );
   const contextStructs = nodes.filter(
-    (n) => n.type === "structNode" && (n.data as StructNodeData).nodeCategory === "context"
+    (n) => getType(n) === "structNode" && (n.data as StructNodeData).nodeCategory === "context"
   );
-  const functionNodes = nodes.filter((n) => n.type === "functionNode");
-  const actionNodes = nodes.filter((n) => n.type === "actionNode");
-  const pdaNodes = nodes.filter((n) => n.type === "pdaNode");
+  const functionNodes = nodes.filter((n) => getType(n) === "functionNode");
+  const actionNodes = nodes.filter((n) => getType(n) === "actionNode");
+  const pdaNodes = nodes.filter((n) => getType(n) === "pdaNode");
 
   // ── PDA seed constants ──────────────────────────────────────────────
   for (const node of pdaNodes) {
-    const d = node.data as PDANodeData;
+    const d = node.data as PDANodeData & { pdaSeeds?: string };
     const name = d.pdaName || "my_pda";
+    const seeds = Array.isArray(d.seeds) ? d.seeds : typeof d.pdaSeeds === "string" ? [d.pdaSeeds.replace(/["']/g, "")] : [];
     lines.push(`// ── PDA: ${name} ──`);
-    lines.push(`// Seeds: [${d.seeds.map((s) => `b"${s}"`).join(", ")}]`);
-    if (d.seeds.length > 0) {
-      lines.push(`pub const ${name.toUpperCase()}_SEED: &[u8] = b"${d.seeds[0]}";`);
+    lines.push(`// Seeds: [${seeds.map((s) => `b"${s}"`).join(", ")}]`);
+    if (seeds.length > 0) {
+      lines.push(`pub const ${name.toUpperCase()}_SEED: &[u8] = b"${seeds[0]}";`);
     }
     lines.push("");
   }
@@ -137,8 +140,9 @@ export function generateAnchorCode(nodes: Node[], edges: Edge[]): string {
 
     // Add PDA account constraints if connected
     for (const pda of connectedPdas) {
-      const pd = pda.data as PDANodeData;
-      const seedsStr = pd.seeds.map((s) => `b"${s}"`).join(", ");
+      const pd = pda.data as PDANodeData & { pdaSeeds?: string };
+      const seeds = Array.isArray(pd.seeds) ? pd.seeds : typeof pd.pdaSeeds === "string" ? [pd.pdaSeeds.replace(/["']/g, "")] : [];
+      const seedsStr = seeds.map((s) => `b"${s}"`).join(", ");
       if (pd.bump) {
         lines.push(`    #[account(seeds = [${seedsStr}], bump)]`);
       } else {
@@ -161,19 +165,22 @@ export function generateAnchorCode(nodes: Node[], edges: Edge[]): string {
   for (const edge of edges) {
     const sourceNode = nodes.find((n) => n.id === edge.source);
     const targetNode = nodes.find((n) => n.id === edge.target);
+    const srcType = getType(sourceNode as Node);
+    const tgtType = getType(targetNode as Node);
+
     if (
-      sourceNode?.type === "structNode" &&
-      (sourceNode.data as StructNodeData).nodeCategory === "context" &&
-      targetNode?.type === "functionNode"
+      srcType === "structNode" &&
+      (sourceNode?.data as StructNodeData).nodeCategory === "context" &&
+      tgtType === "functionNode"
     ) {
-      fnToCtx[targetNode.id] = (sourceNode.data as StructNodeData).structName || "MyContext";
+      fnToCtx[targetNode!.id] = (sourceNode!.data as StructNodeData).structName || "MyContext";
     }
     if (
-      targetNode?.type === "structNode" &&
-      (targetNode.data as StructNodeData).nodeCategory === "context" &&
-      sourceNode?.type === "functionNode"
+      tgtType === "structNode" &&
+      (targetNode?.data as StructNodeData).nodeCategory === "context" &&
+      srcType === "functionNode"
     ) {
-      fnToCtx[sourceNode.id] = (targetNode.data as StructNodeData).structName || "MyContext";
+      fnToCtx[sourceNode!.id] = (targetNode!.data as StructNodeData).structName || "MyContext";
     }
   }
 
@@ -182,13 +189,16 @@ export function generateAnchorCode(nodes: Node[], edges: Edge[]): string {
   for (const edge of edges) {
     const sourceNode = nodes.find((n) => n.id === edge.source);
     const targetNode = nodes.find((n) => n.id === edge.target);
-    if (sourceNode?.type === "cpiNode" && targetNode?.type === "functionNode") {
-      if (!fnToCpi[targetNode.id]) fnToCpi[targetNode.id] = [];
-      fnToCpi[targetNode.id].push(sourceNode.data as CPINodeData);
+    const srcType = getType(sourceNode as Node);
+    const tgtType = getType(targetNode as Node);
+
+    if (srcType === "cpiNode" && tgtType === "functionNode") {
+      if (!fnToCpi[targetNode!.id]) fnToCpi[targetNode!.id] = [];
+      fnToCpi[targetNode!.id].push(sourceNode!.data as CPINodeData);
     }
-    if (targetNode?.type === "cpiNode" && sourceNode?.type === "functionNode") {
-      if (!fnToCpi[sourceNode.id]) fnToCpi[sourceNode.id] = [];
-      fnToCpi[sourceNode.id].push(targetNode.data as CPINodeData);
+    if (tgtType === "cpiNode" && srcType === "functionNode") {
+      if (!fnToCpi[sourceNode!.id]) fnToCpi[sourceNode!.id] = [];
+      fnToCpi[sourceNode!.id].push(targetNode!.data as CPINodeData);
     }
   }
 
@@ -210,15 +220,23 @@ export function generateAnchorCode(nodes: Node[], edges: Edge[]): string {
       const cpis = fnToCpi[node.id];
       if (cpis && cpis.length > 0) {
         for (const cpi of cpis) {
-          lines.push(`        // CPI: invoke ${cpi.instruction} on ${cpi.targetProgram}`);
-          lines.push(`        let cpi_program = ctx.accounts.${cpi.targetProgram.toLowerCase().replace(/\s+/g, "_")}.to_account_info();`);
-          lines.push(`        let cpi_accounts = ${cpi.instruction}CpiAccounts {`);
-          for (const acc of cpi.accounts) {
-            lines.push(`            ${acc.name}: ctx.accounts.${acc.name}.to_account_info(),`);
+          const prog = cpi.programName || cpi.targetProgram || "token_program";
+          const act = cpi.action || cpi.instruction || "transfer";
+          lines.push(`        // CPI: invoke ${act} on ${prog}`);
+          lines.push(`        let cpi_program = ctx.accounts.${prog.toLowerCase().replace(/\s+/g, "_")}.to_account_info();`);
+          lines.push(`        let cpi_accounts = ${act}CpiAccounts {`);
+          if (cpi.accounts && cpi.accounts.length > 0) {
+            for (const acc of cpi.accounts) {
+              lines.push(`            ${acc.name}: ctx.accounts.${acc.name}.to_account_info(),`);
+            }
+          } else {
+            // mock accounts
+            lines.push(`            from: ctx.accounts.from.to_account_info(),`);
+            lines.push(`            to: ctx.accounts.to.to_account_info(),`);
           }
           lines.push("        };");
           lines.push(`        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);`);
-          lines.push(`        ${cpi.targetProgram.toLowerCase().replace(/\s+/g, "_")}::${cpi.instruction}(cpi_ctx)?;`);
+          lines.push(`        ${prog.toLowerCase().replace(/\s+/g, "_")}::${act}(cpi_ctx, 100)?;`);
           lines.push("");
         }
       }

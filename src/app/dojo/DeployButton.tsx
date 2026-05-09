@@ -3,10 +3,12 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Rocket, ExternalLink } from "lucide-react";
 import { useTutorialStore } from "./useTutorialStore";
+import { useApp } from "../context/AppContext";
 import confetti from "canvas-confetti";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { Node, Edge } from "@xyflow/react";
 import { generateAnchorCode } from "../builder/codegen";
+import DeployGuideModal from "../builder/DeployGuideModal";
 
 import { useReactFlow } from "@xyflow/react";
 
@@ -19,17 +21,19 @@ export function generateAnchorRustCode(
 }
 
 // ── Encode code to solana.new URL ───────────────────────────────────────
-function encodeSolanaNewURL(code: string): string {
-  const encoded = encodeURIComponent(code);
-  return `https://beta.solpg.io/import?code=${encoded}`;
+// We no longer auto-import. We just open solana.new so the user can paste.
+function getSolanaNewURL(): string {
+  return `https://beta.solpg.io`;
 }
 
 export default function DeployButton() {
-  const { levelCompleted, currentLevel } = useTutorialStore();
+  const { t } = useApp();
+  const { levelCompleted, currentLevel, currentStep } = useTutorialStore();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { getNodes, getEdges } = useReactFlow();
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const handleDeploy = useCallback(() => {
+  const handleDeployClick = useCallback(() => {
     // Fire confetti
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
@@ -43,15 +47,43 @@ export default function DeployButton() {
       });
     }
 
-    // Generate code and open
+    // Open Modal instead of deploying directly
+    setModalOpen(true);
+
+    const store = useTutorialStore.getState();
+    if (store.currentLevel === 0 && store.currentStep === 5) {
+      store.advanceStep();
+      store.completeLevel();
+      // To get the t() function and config safely without hooks inside the callback:
+      import("../dojo/levelConfigs").then(({ getLevelConfig }) => {
+        const config = getLevelConfig(0);
+        const dialogue = config.dialogue[5];
+        if (dialogue) {
+          store.setSenseiMessage(dialogue.successMessage, "happy");
+          import("../dojo/useTutorialStore").then(({ triggerSenseiVoice }) => {
+            triggerSenseiVoice(t(dialogue.successMessage));
+          });
+        }
+      });
+    }
+  }, [t]);
+
+  const handleConfirmDeploy = useCallback(() => {
+    // Generate code and copy to clipboard
     const code = generateAnchorRustCode(getNodes(), getEdges());
-    const url = encodeSolanaNewURL(code);
-    window.open(url, "_blank");
+    navigator.clipboard.writeText(code);
+    setModalOpen(false);
+
+    // Open solpg
+    setTimeout(() => {
+      window.open(getSolanaNewURL(), "_blank");
+    }, 500);
   }, [getNodes, getEdges]);
 
   return (
-    <AnimatePresence>
-      {levelCompleted && (
+    <>
+      <AnimatePresence>
+      {(levelCompleted || (currentLevel === 0 && currentStep === 5)) && (
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.8 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -61,7 +93,7 @@ export default function DeployButton() {
         >
           <motion.button
             ref={buttonRef}
-            onClick={handleDeploy}
+            onClick={handleDeployClick}
             className="deploy-button-glow relative px-8 py-4 rounded-2xl font-bold text-sm
                        flex items-center gap-3 text-background cursor-pointer overflow-hidden"
             style={{
@@ -85,7 +117,7 @@ export default function DeployButton() {
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }} />
 
             <Rocket size={18} className="relative z-10" />
-            <span className="relative z-10">Deploy to solana.new</span>
+            <span className="relative z-10">{t("builder.deployButton")}</span>
             <ExternalLink size={14} className="relative z-10 opacity-70" />
 
             {/* Pulsing ring */}
@@ -100,6 +132,8 @@ export default function DeployButton() {
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+      <DeployGuideModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onDeploy={handleConfirmDeploy} />
+    </>
   );
 }

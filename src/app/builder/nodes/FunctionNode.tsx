@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { Code2 } from "lucide-react";
 import type { FunctionNodeData } from "../codegen";
+import DeleteButton from "./DeleteButton";
 
 type FunctionNodeType = Node<FunctionNodeData>;
 
@@ -28,6 +29,8 @@ function FunctionNode({ id, data, selected }: NodeProps<FunctionNodeType>) {
       className="relative group"
       style={{ minWidth: 280 }}
     >
+      <DeleteButton id={id} type="node" />
+
       {/* Target Handle (top) */}
       <Handle
         type="target"

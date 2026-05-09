@@ -2,11 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Swords, Volume2, VolumeX, Minimize2 } from "lucide-react";
+import { Swords, Volume2, VolumeX, Minimize2, X } from "lucide-react";
 import { useTutorialStore, triggerSenseiVoice } from "./useTutorialStore";
 
+import { useApp } from "../context/AppContext";
+
 export default function SolanaSensei() {
-  const { senseiMessage, senseiMood, levelCompleted } = useTutorialStore();
+  const { senseiMessage, senseiMood, levelCompleted, activeSenseiTopic, clearSenseiHelp } = useTutorialStore();
+  const { t } = useApp();
   const [minimized, setMinimized] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -15,16 +18,17 @@ export default function SolanaSensei() {
 
   // Typewriter effect when message changes
   useEffect(() => {
-    if (senseiMessage === prevMsgRef.current) return;
+    if (senseiMessage === prevMsgRef.current && displayedText !== "") return;
     prevMsgRef.current = senseiMessage;
 
+    const translatedMessage = t(senseiMessage);
     setDisplayedText("");
     let i = 0;
     if (typewriterRef.current) clearInterval(typewriterRef.current);
     typewriterRef.current = setInterval(() => {
       i++;
-      setDisplayedText(senseiMessage.slice(0, i));
-      if (i >= senseiMessage.length) {
+      setDisplayedText(translatedMessage.slice(0, i));
+      if (i >= translatedMessage.length) {
         clearInterval(typewriterRef.current);
       }
     }, 20);
@@ -39,7 +43,7 @@ export default function SolanaSensei() {
       return;
     }
     setIsSpeaking(true);
-    triggerSenseiVoice(senseiMessage);
+    triggerSenseiVoice(t(senseiMessage));
     const check = setInterval(() => {
       if (!window.speechSynthesis?.speaking) {
         setIsSpeaking(false);
@@ -87,8 +91,52 @@ export default function SolanaSensei() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 40, scale: 0.9 }}
+    <>
+      {/* Contextual Sensei Side Panel */}
+      <AnimatePresence>
+        {activeSenseiTopic && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-background/40 backdrop-blur-sm"
+              onClick={clearSenseiHelp}
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-80 md:w-96 z-[70] bg-card-bg border-l border-card-border shadow-2xl p-6 overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-neon-purple/20 flex items-center justify-center border border-neon-purple/30 relative overflow-hidden">
+                    <Swords size={20} className="text-neon-purple relative z-10" />
+                    <motion.div className="absolute inset-0 bg-neon-purple/20 blur-xl" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity }} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-foreground leading-tight">Solana Sensei</h2>
+                    <p className="text-xs text-neon-purple font-mono">Contextual Help</p>
+                  </div>
+                </div>
+                <button onClick={clearSenseiHelp} className="p-2 text-muted hover:text-foreground hover:bg-surface rounded-lg transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="relative p-5 rounded-xl border border-neon-purple/20 bg-surface/50 leading-relaxed text-sm text-foreground shadow-[inset_0_0_20px_rgba(153,69,255,0.05)]">
+                <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple rounded-l-xl" />
+                <p className="whitespace-pre-wrap">{t(activeSenseiTopic)}</p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       className="fixed bottom-6 right-6 z-50 w-[340px] sensei-bubble"
     >
@@ -152,7 +200,7 @@ export default function SolanaSensei() {
               className="text-xs text-foreground leading-relaxed"
               style={{ minHeight: 48 }}>
               {displayedText}
-              {displayedText.length < senseiMessage.length && (
+              {displayedText.length < t(senseiMessage).length && (
                 <motion.span className="inline-block w-0.5 h-3 ml-0.5 bg-neon-green"
                   animate={{ opacity: [1, 0] }}
                   transition={{ duration: 0.5, repeat: Infinity }} />
@@ -175,5 +223,6 @@ export default function SolanaSensei() {
         </div>
       </div>
     </motion.div>
+    </>
   );
 }

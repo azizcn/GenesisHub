@@ -64,266 +64,161 @@ export interface LevelConfig {
   dialogue: StepDialogue[];
 }
 
-// ── Level 1: Hello World ────────────────────────────────────────────────
+// ── Level 0: Prologue ───────────────────────────────────────────────────
+const level0: LevelConfig = {
+  level: 0,
+  title: "Prologue",
+  subtitle: "The UI Basics",
+  description: "Learn how to use the Genesis Dojo interface.",
+  totalSteps: 6,
+  ghostNodes: [
+    {
+      id: "ghost-l0-fn",
+      step: 0,
+      expectedType: "functionNode",
+      expectedData: {},
+      label: "Drop Instruction here",
+      position: { x: 300, y: 150 },
+      accentColor: "#f0f056",
+    },
+  ],
+  ghostEdges: [],
+  sidebarItems: [
+    {
+      type: "functionNode",
+      label: "Instruction",
+      icon: "Code2",
+      color: "#f0f056",
+      defaultData: {
+        label: "fn initialize",
+        functionName: "initialize",
+        body: 'msg!("Ready!");\nOk(())',
+      },
+      availableAtStep: 0,
+    },
+  ],
+  dialogue: [
+    { step: 0, instruction: "dojo.level0.step0.inst", successMessage: "dojo.level0.step0.success", errorMessage: "dojo.level0.step0.err" },
+    { step: 1, instruction: "dojo.level0.step1.inst", successMessage: "dojo.level0.step1.success", errorMessage: "dojo.level0.step1.err" },
+    { step: 2, instruction: "dojo.level0.step2.inst", successMessage: "dojo.level0.step2.success", errorMessage: "dojo.level0.step2.err" },
+    { step: 3, instruction: "dojo.level0.step3.inst", successMessage: "dojo.level0.step3.success", errorMessage: "dojo.level0.step3.err" },
+    { step: 4, instruction: "dojo.level0.step4.inst", successMessage: "dojo.level0.step4.success", errorMessage: "dojo.level0.step4.err" },
+    { step: 5, instruction: "dojo.level0.step5.inst", successMessage: "dojo.level0.step5.success", errorMessage: "dojo.level0.step5.err" },
+  ],
+};
+
+// ── Level 1: The Vault - Accounts ────────────────────────────────────────
 const level1: LevelConfig = {
   level: 1,
-  title: "Hello World",
-  subtitle: "Log a message to the Solana runtime",
-  description:
-    "Every Solana Program starts with a single Instruction. Drop a Context struct and an Instruction, then connect them to produce your first on-chain log.",
-  totalSteps: 3,
+  title: "The Vault",
+  subtitle: "Accounts",
+  description: "Learn how to create a data account on Solana.",
+  totalSteps: 4,
   ghostNodes: [
-    {
-      id: "ghost-l1-ctx",
-      step: 0,
-      expectedType: "structNode",
-      expectedData: { nodeCategory: "context" },
-      label: "Drop Context Struct here",
-      position: { x: 300, y: 80 },
-      accentColor: "#9945ff",
-    },
-    {
-      id: "ghost-l1-fn",
-      step: 1,
-      expectedType: "functionNode",
-      expectedData: {},
-      label: "Drop Instruction here",
-      position: { x: 300, y: 360 },
-      accentColor: "#f0f056",
-    },
+    { id: "ghost-l1-fn", step: 0, expectedType: "functionNode", expectedData: {}, label: "Drop Instruction here", position: { x: 300, y: 350 }, accentColor: "#f0f056" },
+    { id: "ghost-l1-state", step: 1, expectedType: "structNode", expectedData: { nodeCategory: "state" }, label: "Drop State Account here", position: { x: 300, y: 150 }, accentColor: "#14f195" },
   ],
   ghostEdges: [
-    {
-      id: "ghost-edge-l1-ctx-fn",
-      step: 2,
-      sourceGhostId: "ghost-l1-ctx",
-      targetGhostId: "ghost-l1-fn",
-    },
+    { id: "ghost-edge-l1", step: 2, sourceGhostId: "ghost-l1-state", targetGhostId: "ghost-l1-fn" },
   ],
   sidebarItems: [
-    {
-      type: "structNode",
-      label: "Context Struct",
-      icon: "Shield",
-      color: "#9945ff",
-      defaultData: {
-        label: "Hello Context",
-        structName: "HelloCtx",
-        fields: [{ name: "signer", type: "Signer<'info>" }],
-        nodeCategory: "context",
-      },
-      availableAtStep: 0,
-    },
-    {
-      type: "functionNode",
-      label: "Instruction",
-      icon: "Code2",
-      color: "#f0f056",
-      defaultData: {
-        label: "fn hello_world",
-        functionName: "hello_world",
-        body: 'msg!("Hello, Solana!");\\nOk(())',
-        connectedContext: "HelloCtx",
-      },
-      availableAtStep: 1,
-    },
+    { type: "functionNode", label: "Instruction", icon: "Code2", color: "#f0f056", defaultData: { label: "fn process", functionName: "process", body: "Ok(())" }, availableAtStep: 0 },
+    { type: "structNode", label: "State Account", icon: "Database", color: "#14f195", defaultData: { label: "VaultAccount", structName: "VaultAccount", fields: [{ name: "balance", type: "u64" }], nodeCategory: "state" }, availableAtStep: 1 },
   ],
   dialogue: [
-    {
-      step: 0,
-      instruction:
-        "First, every Instruction needs accounts. Drag the Context Struct onto the ghost node. A Context defines which accounts your Instruction requires — at minimum, a Signer!",
-      successMessage:
-        "Perfect! Your Context is set. The Signer account tells the runtime WHO authorized this transaction. Without it, Solana rejects everything. 🔐",
-      errorMessage:
-        "Hold up! That's not a Context Struct. You need a Context with a Signer account — that's the account that authorizes the transaction!",
-    },
-    {
-      step: 1,
-      instruction:
-        "Now drop an Instruction node. This is the entry point of your Program — think of it as a function that the Solana runtime executes when invoked.",
-      successMessage:
-        'Excellent! Your hello_world Instruction is ready. It uses msg!() to log "Hello, Solana!" — this gets written to the transaction log, costing minimal Compute Units. ⚡',
-      errorMessage:
-        "That's not an Instruction node! Drag the Instruction component — it's the function that executes your Program logic.",
-    },
-    {
-      step: 2,
-      instruction:
-        "Final step! Connect the Context to the Instruction. Drag from the Context's bottom handle to the Instruction's top handle. This tells Anchor which accounts to validate.",
-      successMessage:
-        "🎉 YATTA! Your first Solana Program compiles! The Context validates accounts, the Instruction executes logic. That's the Anchor pattern: Context → Instruction. Simple but powerful!",
-      errorMessage:
-        "Wrong connection! Connect the Context (top) → Instruction (bottom). The data flows top-down — Context provides accounts, Instruction uses them.",
-    },
+    { step: 0, instruction: "dojo.level1.step0.inst", successMessage: "dojo.level1.step0.success", errorMessage: "dojo.level1.step0.err" },
+    { step: 1, instruction: "dojo.level1.step1.inst", successMessage: "dojo.level1.step1.success", errorMessage: "dojo.level1.step1.err" },
+    { step: 2, instruction: "dojo.level1.step2.inst", successMessage: "dojo.level1.step2.success", errorMessage: "dojo.level1.step2.err" },
+    { step: 3, instruction: "dojo.level1.step3.inst", successMessage: "dojo.level1.step3.success", errorMessage: "dojo.level1.step3.err" },
   ],
 };
 
-// ── Level 2: Basic Counter ──────────────────────────────────────────────
+// ── Level 2: The Key - Signers ──────────────────────────────────────────
 const level2: LevelConfig = {
   level: 2,
-  title: "Basic Counter",
-  subtitle: "Increment a u64 variable stored in a PDA",
-  description:
-    "Now you'll store persistent state on-chain. Create a State Account to hold a counter, wire it through a Context, and write an Instruction to increment it.",
-  totalSteps: 5,
+  title: "The Key",
+  subtitle: "Signers",
+  description: "Teach authorization. Turn an account into a signer.",
+  totalSteps: 4,
   ghostNodes: [
-    {
-      id: "ghost-l2-state",
-      step: 0,
-      expectedType: "structNode",
-      expectedData: { nodeCategory: "state" },
-      label: "Drop State Account here",
-      position: { x: 300, y: 60 },
-      accentColor: "#14f195",
-    },
-    {
-      id: "ghost-l2-ctx",
-      step: 1,
-      expectedType: "structNode",
-      expectedData: { nodeCategory: "context" },
-      label: "Drop Context Struct here",
-      position: { x: 300, y: 300 },
-      accentColor: "#9945ff",
-    },
-    {
-      id: "ghost-l2-fn",
-      step: 2,
-      expectedType: "functionNode",
-      expectedData: {},
-      label: "Drop Instruction here",
-      position: { x: 300, y: 540 },
-      accentColor: "#f0f056",
-    },
+    { id: "ghost-l2-fn", step: 0, expectedType: "functionNode", expectedData: {}, label: "Drop Instruction here", position: { x: 300, y: 350 }, accentColor: "#f0f056" },
+    { id: "ghost-l2-state", step: 1, expectedType: "structNode", expectedData: { nodeCategory: "state" }, label: "Drop State Account here", position: { x: 300, y: 150 }, accentColor: "#14f195" },
   ],
   ghostEdges: [
-    {
-      id: "ghost-edge-l2-state-ctx",
-      step: 3,
-      sourceGhostId: "ghost-l2-state",
-      targetGhostId: "ghost-l2-ctx",
-    },
-    {
-      id: "ghost-edge-l2-ctx-fn",
-      step: 4,
-      sourceGhostId: "ghost-l2-ctx",
-      targetGhostId: "ghost-l2-fn",
-    },
+    { id: "ghost-edge-l2", step: 2, sourceGhostId: "ghost-l2-state", targetGhostId: "ghost-l2-fn" },
   ],
   sidebarItems: [
-    {
-      type: "structNode",
-      label: "State Account",
-      icon: "Database",
-      color: "#14f195",
-      defaultData: {
-        label: "CounterState",
-        structName: "CounterState",
-        fields: [{ name: "count", type: "u64" }],
-        nodeCategory: "state",
-      },
-      availableAtStep: 0,
-    },
-    {
-      type: "structNode",
-      label: "Context Struct",
-      icon: "Shield",
-      color: "#9945ff",
-      defaultData: {
-        label: "Increment Context",
-        structName: "IncrementCtx",
-        fields: [
-          { name: "counter", type: "Account<'info, CounterState>" },
-          { name: "signer", type: "Signer<'info>" },
-        ],
-        nodeCategory: "context",
-      },
-      availableAtStep: 1,
-    },
-    {
-      type: "functionNode",
-      label: "Instruction",
-      icon: "Code2",
-      color: "#f0f056",
-      defaultData: {
-        label: "fn increment",
-        functionName: "increment",
-        body: "ctx.accounts.counter.count += 1;\\nOk(())",
-        connectedContext: "IncrementCtx",
-      },
-      availableAtStep: 2,
-    },
+    { type: "functionNode", label: "Instruction", icon: "Code2", color: "#f0f056", defaultData: { label: "fn authenticate", functionName: "authenticate", body: 'msg!("Authenticated!");\nOk(())' }, availableAtStep: 0 },
+    { type: "structNode", label: "State Account", icon: "Database", color: "#14f195", defaultData: { label: "UserAccount", structName: "UserAccount", fields: [], nodeCategory: "state" }, availableAtStep: 1 },
   ],
   dialogue: [
-    {
-      step: 0,
-      instruction:
-        "Let's store data on-chain! Drag a State Account — this is where Solana keeps your counter value. Under the hood, it's an Account with a discriminator and your u64 field, stored in a PDA.",
-      successMessage:
-        "Your CounterState is on the canvas! This struct gets serialized into an Account on Solana. The #[account] macro tells Anchor to manage its discriminator — 8 bytes of overhead per account. Compute Units well spent! 💾",
-      errorMessage:
-        "That's not a State Account! You need one with nodeCategory 'state' — this is the on-chain data structure, not a Context.",
-    },
-    {
-      step: 1,
-      instruction:
-        "Now add a Context Struct. It must reference both the CounterState account AND a Signer. The Context is how Anchor validates that the right accounts are passed to your Instruction.",
-      successMessage:
-        "Context set! Notice it has TWO accounts: the counter (mutable, so we can write to it) and a signer (who pays for the transaction). Solana enforces this at the runtime level — no Signer, no execution! 🛡️",
-      errorMessage:
-        "Hold up! You can't modify an account without making it mutable and providing a Signer. That's a strict Solana rule! Drop a Context Struct.",
-    },
-    {
-      step: 2,
-      instruction:
-        "Drop the Instruction node. This function increments `ctx.accounts.counter.count` by 1. Simple, but it's writing to on-chain state — real blockchain mutation! 🔥",
-      successMessage:
-        "Your increment function is ready! Each call to this Instruction costs roughly 200 Compute Units — Solana processes it in ~400ms. Try doing THAT on Ethereum! ⚡",
-      errorMessage:
-        "That's not an Instruction! Drag the Instruction component to define the increment logic.",
-    },
-    {
-      step: 3,
-      instruction:
-        "Connect State Account → Context. This tells Anchor that the Context needs access to the CounterState account. Drag from the State's bottom handle to the Context's top handle.",
-      successMessage:
-        "Connected! Anchor will now deserialize the CounterState account and validate it belongs to your Program. If anyone passes a fake account, the runtime will reject it immediately. Security by default! 🔐",
-      errorMessage:
-        "Wrong connection! State Account must connect to the Context Struct. The flow is: State → Context → Instruction (top to bottom).",
-    },
-    {
-      step: 4,
-      instruction:
-        "Last connection! Link Context → Instruction. This is the final piece — the Instruction function receives the validated Context, reads/writes accounts through it.",
-      successMessage:
-        "🏆 INCREDIBLE! You just built a fully functional counter Program! State → Context → Instruction. This is the Anchor holy trinity. You're ready to deploy to Devnet!",
-      errorMessage:
-        "Almost there! Connect the Context (source) to the Instruction (target). Top-down flow, always!",
-    },
+    { step: 0, instruction: "dojo.level2.step0.inst", successMessage: "dojo.level2.step0.success", errorMessage: "dojo.level2.step0.err" },
+    { step: 1, instruction: "dojo.level2.step1.inst", successMessage: "dojo.level2.step1.success", errorMessage: "dojo.level2.step1.err" },
+    { step: 2, instruction: "dojo.level2.step2.inst", successMessage: "dojo.level2.step2.success", errorMessage: "dojo.level2.step2.err" },
+    { step: 3, instruction: "dojo.level2.step3.inst", successMessage: "dojo.level2.step3.success", errorMessage: "dojo.level2.step3.err" },
   ],
 };
 
-// ── Level 3: Token Transfer (Stub) ──────────────────────────────────────
+// ── Level 3: The Ghost - PDA ────────────────────────────────────────────
 const level3: LevelConfig = {
   level: 3,
-  title: "Token Transfer",
-  subtitle: "Move SOL between two accounts",
-  description:
-    "The final challenge! Build a Program that transfers SOL using a Cross-Program Invocation (CPI) to the System Program. This is how real DeFi works.",
-  totalSteps: 0,
-  ghostNodes: [],
-  ghostEdges: [],
-  sidebarItems: [],
-  dialogue: [],
+  title: "The Ghost",
+  subtitle: "Program Derived Addresses",
+  description: "Find an account without a private key using a seed.",
+  totalSteps: 3,
+  ghostNodes: [
+    { id: "ghost-l3-state", step: 0, expectedType: "structNode", expectedData: { nodeCategory: "state" }, label: "Drop State Account here", position: { x: 300, y: 250 }, accentColor: "#14f195" },
+    { id: "ghost-l3-seed", step: 1, expectedType: "pdaNode", expectedData: {}, label: "Drop PDA Seed here", position: { x: 300, y: 100 }, accentColor: "#38bdf8" },
+  ],
+  ghostEdges: [
+    { id: "ghost-edge-l3", step: 2, sourceGhostId: "ghost-l3-seed", targetGhostId: "ghost-l3-state" },
+  ],
+  sidebarItems: [
+    { type: "structNode", label: "State Account", icon: "Database", color: "#14f195", defaultData: { label: "GhostAccount", structName: "GhostAccount", fields: [], nodeCategory: "state" }, availableAtStep: 0 },
+    { type: "pdaNode", label: "PDA Seed", icon: "Ghost", color: "#38bdf8", defaultData: { label: "Seed", pdaSeeds: '"ghost_seed"' }, availableAtStep: 1 },
+  ],
+  dialogue: [
+    { step: 0, instruction: "dojo.level3.step0.inst", successMessage: "dojo.level3.step0.success", errorMessage: "dojo.level3.step0.err" },
+    { step: 1, instruction: "dojo.level3.step1.inst", successMessage: "dojo.level3.step1.success", errorMessage: "dojo.level3.step1.err" },
+    { step: 2, instruction: "dojo.level3.step2.inst", successMessage: "dojo.level3.step2.success", errorMessage: "dojo.level3.step2.err" },
+  ],
+};
+
+// ── Level 4: The Handshake - CPI ────────────────────────────────────────
+const level4: LevelConfig = {
+  level: 4,
+  title: "The Handshake",
+  subtitle: "Cross-Program Invocation",
+  description: "Call another official Solana program.",
+  totalSteps: 3,
+  ghostNodes: [
+    { id: "ghost-l4-fn", step: 0, expectedType: "functionNode", expectedData: {}, label: "Drop Instruction here", position: { x: 300, y: 150 }, accentColor: "#f0f056" },
+    { id: "ghost-l4-cpi", step: 1, expectedType: "cpiNode", expectedData: {}, label: "Drop CPI Node here", position: { x: 300, y: 350 }, accentColor: "#f43f5e" },
+  ],
+  ghostEdges: [
+    { id: "ghost-edge-l4", step: 2, sourceGhostId: "ghost-l4-fn", targetGhostId: "ghost-l4-cpi" },
+  ],
+  sidebarItems: [
+    { type: "functionNode", label: "Instruction", icon: "Code2", color: "#f0f056", defaultData: { label: "fn transfer_tokens", functionName: "transfer_tokens", body: "Ok(())" }, availableAtStep: 0 },
+    { type: "cpiNode", label: "Token Transfer", icon: "Send", color: "#f43f5e", defaultData: { label: "Token Program", programName: "token_program", action: "transfer" }, availableAtStep: 1 },
+  ],
+  dialogue: [
+    { step: 0, instruction: "dojo.level4.step0.inst", successMessage: "dojo.level4.step0.success", errorMessage: "dojo.level4.step0.err" },
+    { step: 1, instruction: "dojo.level4.step1.inst", successMessage: "dojo.level4.step1.success", errorMessage: "dojo.level4.step1.err" },
+    { step: 2, instruction: "dojo.level4.step2.inst", successMessage: "dojo.level4.step2.success", errorMessage: "dojo.level4.step2.err" },
+  ],
 };
 
 // ── Export ───────────────────────────────────────────────────────────────
 export const LEVEL_CONFIGS: Record<TutorialLevel, LevelConfig> = {
+  0: level0,
   1: level1,
   2: level2,
   3: level3,
+  4: level4,
 };
 
 export function getLevelConfig(level: TutorialLevel): LevelConfig {
   return LEVEL_CONFIGS[level];
 }
+

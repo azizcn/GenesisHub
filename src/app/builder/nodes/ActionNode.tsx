@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { ArrowRightLeft, Coins, Trash2, Plus } from "lucide-react";
 import type { ActionNodeData, StructField } from "../codegen";
+import DeleteButton from "./DeleteButton";
 
 type ActionNodeType = Node<ActionNodeData>;
 
@@ -51,6 +52,7 @@ function ActionNode({ id, data, selected }: NodeProps<ActionNodeType>) {
       className="relative group"
       style={{ minWidth: 250 }}
     >
+      <DeleteButton id={id} type="node" />
       <Handle
         type="target"
         position={Position.Top}

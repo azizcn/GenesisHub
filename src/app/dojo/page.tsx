@@ -18,8 +18,8 @@ export default function DojoPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
-    if (!currentLevel) {
-      startLevel(1, getLevelConfig(1).totalSteps);
+    if (currentLevel === undefined || currentLevel === null) {
+      startLevel(0, getLevelConfig(0).totalSteps);
     } else {
       startLevel(currentLevel, config.totalSteps);
     }
@@ -36,13 +36,13 @@ export default function DojoPage() {
         <div className="h-4 w-px bg-card-border" />
         
         <div className="flex items-center gap-2">
-          {[1, 2, 3].map((level) => {
+          {[0, 1, 2, 3].map((level) => {
             const isActive = currentLevel === level;
             const isCompleted = completedLevels.includes(level);
             return (
               <button
                 key={level}
-                onClick={() => startLevel(level as 1 | 2 | 3, getLevelConfig(level as 1 | 2 | 3).totalSteps)}
+                onClick={() => startLevel(level as 0 | 1 | 2 | 3, getLevelConfig(level as 0 | 1 | 2 | 3).totalSteps)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative overflow-hidden
                   ${isActive ? "text-background" : isCompleted ? "text-neon-green" : "text-muted hover:text-foreground"}`}
                 style={{
@@ -51,7 +51,7 @@ export default function DojoPage() {
                 }}
               >
                 {isCompleted && !isActive && <span className="mr-1.5">✓</span>}
-                Level {level}
+                {level === 0 ? "Prologue" : `Level ${level}`}
                 
                 {isActive && (
                   <motion.div className="absolute inset-0 opacity-30"

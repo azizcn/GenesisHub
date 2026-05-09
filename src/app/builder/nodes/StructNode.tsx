@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { Database, Plus, Trash2, Shield } from "lucide-react";
 import type { StructNodeData, StructField } from "../codegen";
+import DeleteButton from "./DeleteButton";
 
 type StructNodeType = Node<StructNodeData>;
 
@@ -62,6 +63,8 @@ function StructNode({ id, data, selected }: NodeProps<StructNodeType>) {
       className="relative group"
       style={{ minWidth: 280 }}
     >
+      <DeleteButton id={id} type="node" />
+
       {/* ── Target Handle (top — bullet pointing up) ─────────────── */}
       <Handle
         type="target"

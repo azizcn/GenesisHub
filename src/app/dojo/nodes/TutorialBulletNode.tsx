@@ -13,17 +13,25 @@ interface TutorialNodeData {
   accentColor: string;
   fields?: { name: string; type: string }[];
   body?: string;
+  pdaSeeds?: string;
+  programName?: string;
+  action?: string;
+  originalType?: string;
   [key: string]: unknown;
 }
 
 type TutorialNodeType = Node<TutorialNodeData>;
 
 function TutorialBulletNode({ data, selected }: NodeProps<TutorialNodeType>) {
-  const { label, accentColor, nodeCategory, structName, functionName, fields, body } = data;
+  const { label, accentColor, nodeCategory, structName, functionName, fields, body, pdaSeeds, programName, action, originalType } = data;
   const accentMuted = `${accentColor}20`;
 
-  const Icon = nodeCategory === "context" ? Shield : nodeCategory === "state" ? Database : Code2;
-  const badge = nodeCategory === "context" ? "CTX" : nodeCategory === "state" ? "STATE" : "IX";
+  let Icon = Code2;
+  let badge = "IX";
+  if (nodeCategory === "context") { Icon = Shield; badge = "CTX"; }
+  else if (nodeCategory === "state") { Icon = Database; badge = "STATE"; }
+  else if (originalType === "pdaNode") { Icon = Shield; badge = "PDA"; }
+  else if (originalType === "cpiNode") { Icon = Code2; badge = "CPI"; }
 
   return (
     <motion.div
@@ -97,6 +105,30 @@ function TutorialBulletNode({ data, selected }: NodeProps<TutorialNodeType>) {
             <pre className="text-[10px] font-mono text-muted bg-surface rounded p-2 overflow-hidden">
               {body.replace(/\\n/g, "\n")}
             </pre>
+          </div>
+        )}
+
+        {/* PDA Seeds */}
+        {pdaSeeds && (
+          <div className="px-3 py-2 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              <span className="text-muted">seeds:</span>
+              <span style={{ color: accentColor }}>{pdaSeeds}</span>
+            </div>
+          </div>
+        )}
+
+        {/* CPI Program / Action */}
+        {programName && action && (
+          <div className="px-3 py-2 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              <span className="text-muted">program:</span>
+              <span style={{ color: accentColor }}>{programName}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              <span className="text-muted">action:</span>
+              <span style={{ color: accentColor }}>{action}</span>
+            </div>
           </div>
         )}
       </div>

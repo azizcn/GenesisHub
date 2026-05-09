@@ -17,6 +17,7 @@ import CodePreviewPanel from "./CodePreviewPanel";
 import CanvasToolbar from "./CanvasToolbar";
 import AIImportModal from "./AIImportModal";
 import AITutorPanel from "./AITutorPanel";
+import NodeEditModal from "./NodeEditModal";
 
 import StructNode from "./nodes/StructNode";
 import FunctionNode from "./nodes/FunctionNode";
@@ -24,6 +25,7 @@ import ActionNode from "./nodes/ActionNode";
 import TemplateNode from "./nodes/TemplateNode";
 import PDANode from "./nodes/PDANode";
 import CPINode from "./nodes/CPINode";
+import DeletableEdge from "./DeletableEdge";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Check } from "lucide-react";
 
@@ -35,6 +37,10 @@ const nodeTypes = {
   templateNode: TemplateNode,
   pdaNode: PDANode,
   cpiNode: CPINode,
+};
+
+const edgeTypes = {
+  default: DeletableEdge,
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -113,11 +119,13 @@ function BuilderCanvas() {
   const [locked, setLocked] = useState(false);
   const [tutorOpen, setTutorOpen] = useState(true);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [editModalNodeId, setEditModalNodeId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [rejectNodeId, setRejectNodeId] = useState<string | null>(null);
   const toastIdRef = useRef(0);
 
   const selectedNode = useMemo(() => nodes.find((n) => n.id === selectedNodeId) || null, [nodes, selectedNodeId]);
+  const editModalNode = useMemo(() => nodes.find((n) => n.id === editModalNodeId) || null, [nodes, editModalNodeId]);
 
   // ── Toast helper ────────────────────────────────────────────────────
   const showToast = useCallback((message: string, type: "error" | "success") => {
@@ -208,6 +216,15 @@ function BuilderCanvas() {
     if (!tutorOpen) setTutorOpen(true);
   }, [tutorOpen]);
 
+  const onNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    setEditModalNodeId(node.id);
+  }, []);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSaveNodeEdit = useCallback((id: string, updates: any) => {
+    setNodes((nds) => nds.map((n) => n.id === id ? { ...n, data: { ...n.data, ...updates } } : n));
+  }, [setNodes]);
+
   const onPaneClick = useCallback(() => { setSelectedNodeId(null); }, []);
 
   // ── Drag from sidebar → canvas ────────────────────────────────────
@@ -278,8 +295,8 @@ function BuilderCanvas() {
           nodes={styledNodes} edges={edges}
           onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
           onConnect={onConnect} onDrop={onDrop} onDragOver={onDragOver}
-          onNodeClick={onNodeClick} onPaneClick={onPaneClick}
-          nodeTypes={nodeTypes} nodesDraggable={!locked} fitView
+          onNodeClick={onNodeClick} onNodeDoubleClick={onNodeDoubleClick} onPaneClick={onPaneClick}
+          nodeTypes={nodeTypes} edgeTypes={edgeTypes} nodesDraggable={!locked} fitView
           proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{ animated: true, style: { stroke: "#14f195", strokeWidth: 2 } }}
           className="builder-canvas"
@@ -311,6 +328,7 @@ function BuilderCanvas() {
       )}
 
       <AIImportModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} onImport={handleAIImport} />
+      <NodeEditModal node={editModalNode} onClose={() => setEditModalNodeId(null)} onSave={handleSaveNodeEdit} />
 
       {/* Toast container */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 items-center">

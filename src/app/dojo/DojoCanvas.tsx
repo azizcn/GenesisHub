@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import {
   ReactFlow, Background, Controls, MiniMap, useNodesState, useEdgesState,
   useReactFlow, BackgroundVariant,
@@ -13,12 +13,24 @@ import { useTutorialStore, triggerSenseiVoice } from "./useTutorialStore";
 import { getLevelConfig, type GhostNodeConfig } from "./levelConfigs";
 import GhostBulletNode from "./nodes/GhostBulletNode";
 import TutorialBulletNode from "./nodes/TutorialBulletNode";
+import NodeEditModal from "../builder/NodeEditModal";
+import CodePreviewPanel from "../builder/CodePreviewPanel";
+import { generateAnchorCode } from "../builder/codegen";
 import confetti from "canvas-confetti";
+import { useBuilderStore } from "../builder/useBuilderStore";
+import { PanelLeftOpen } from "lucide-react";
 
 const nodeTypes = {
   ghostBulletNode: GhostBulletNode,
   tutorialBulletNode: TutorialBulletNode,
 };
+
+const defaultEdgeOptions = {
+  animated: true,
+  style: { stroke: "#14f195", strokeWidth: 2 },
+};
+
+const proOptions = { hideAttribution: true };
 
 // Helper: distance between two points
 function dist(a: { x: number; y: number }, b: { x: number; y: number }) {
@@ -28,17 +40,25 @@ function dist(a: { x: number; y: number }, b: { x: number; y: number }) {
 const SNAP_DISTANCE = 120;
 
 export default function DojoCanvas() {
-  const { theme } = useApp();
+  const { theme, t } = useApp();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, fitView } = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [editModalNodeId, setEditModalNodeId] = useState<string | null>(null);
+  const [codeOutput, setCodeOutput] = useState("");
 
   const store = useTutorialStore();
+  const { codePreviewOpen, toggleCodePreview } = useBuilderStore();
   const config = getLevelConfig(store.currentLevel);
 
   // ── Initialize ghost nodes when level/step changes ──────────────────
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCodeOutput(generateAnchorCode(nodes, edges));
+  }, [nodes, edges]);
+
   useEffect(() => {
     const ghostNodes: Node[] = config.ghostNodes
       .filter((g) => g.step <= store.currentStep)
@@ -60,6 +80,7 @@ export default function DojoCanvas() {
               ...(sidebarItem?.defaultData || {}),
               label: sidebarItem?.label || g.label,
               accentColor: g.accentColor,
+              originalType: g.expectedType,
             },
           } as Node;
         }
@@ -109,6 +130,24 @@ export default function DojoCanvas() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.currentStep, store.currentLevel]);
+
+  // ── Code Preview logic for Level 0 and Level 3 ───────────────────────────
+  useEffect(() => {
+    if (store.currentLevel === 3 && store.currentStep === 0 && codePreviewOpen) {
+      toggleCodePreview(false);
+    }
+    
+    // Level 0 Step 3: Open Code Preview
+    if (store.currentLevel === 0 && store.currentStep === 3 && codePreviewOpen && !store.levelCompleted) {
+      store.advanceStep();
+      const dialogue = config.dialogue[3];
+      if (dialogue) {
+        store.setSenseiMessage(dialogue.successMessage, "happy");
+        triggerSenseiVoice(t(dialogue.successMessage));
+      }
+      confetti({ particleCount: 150, spread: 100, origin: { x: 0.5, y: 0.5 }, colors: ["#14f195", "#9945ff"] });
+    }
+  }, [store.currentLevel, store.currentStep, store.levelCompleted, codePreviewOpen, toggleCodePreview, config, store, t]);
 
   // ── Drag Over ─────────────────────────────────────────────────────────
   const onDragOver = useCallback((e: DragEvent) => {
@@ -161,7 +200,7 @@ export default function DojoCanvas() {
       // Show success message
       if (dialogue) {
         store.setSenseiMessage(dialogue.successMessage, "happy");
-        triggerSenseiVoice(dialogue.successMessage);
+        triggerSenseiVoice(t(dialogue.successMessage));
       }
 
       // Mini confetti burst
@@ -181,7 +220,7 @@ export default function DojoCanvas() {
       store.triggerNodeError(closest.id);
       if (dialogue) {
         store.setSenseiMessage(dialogue.errorMessage, "angry");
-        triggerSenseiVoice(dialogue.errorMessage);
+        triggerSenseiVoice(t(dialogue.errorMessage));
       }
 
       // Clear error after animation
@@ -211,11 +250,11 @@ export default function DojoCanvas() {
 
       if (dialogue) {
         store.setSenseiMessage(dialogue.successMessage, "happy");
-        triggerSenseiVoice(dialogue.successMessage);
+        triggerSenseiVoice(t(dialogue.successMessage));
       }
 
       // Check if level is now complete
-      const nextStep = store.currentStep;
+      const nextStep = store.currentStep + 1;
       if (nextStep >= config.totalSteps) {
         store.completeLevel();
         confetti({
@@ -228,10 +267,83 @@ export default function DojoCanvas() {
     } else {
       if (dialogue) {
         store.setSenseiMessage(dialogue.errorMessage, "angry");
-        triggerSenseiVoice(dialogue.errorMessage);
+        triggerSenseiVoice(t(dialogue.errorMessage));
       }
     }
-  }, [config, store]);
+  }, [config, store, t]);
+
+  // ── Node interactions ─────────────────────────────────────────────────
+  const onNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    // Only placed nodes can be edited
+    if (node.type === "tutorialBulletNode") {
+      setEditModalNodeId(node.id);
+      
+      // Level 0 Step 1: Double click to open properties
+      if (store.currentLevel === 0 && store.currentStep === 1) {
+        store.advanceStep();
+        const dialogue = config.dialogue[1];
+        if (dialogue) {
+          store.setSenseiMessage(dialogue.successMessage, "happy");
+          triggerSenseiVoice(t(dialogue.successMessage));
+        }
+      }
+    }
+  }, [store, config, t]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSaveNodeEdit = useCallback((id: string, updates: any) => {
+    setNodes((nds) => nds.map((n) => n.id === id ? { ...n, data: { ...n.data, ...updates } } : n));
+    
+    // Level 1 Step 3 requires isMut to be toggled
+    if (store.currentLevel === 1 && store.currentStep === 3 && updates.isMut === true) {
+      store.advanceStep();
+      const dialogue = config.dialogue[3];
+      if (dialogue) {
+        store.setSenseiMessage(dialogue.successMessage, "happy");
+        triggerSenseiVoice(t(dialogue.successMessage));
+      }
+      store.completeLevel();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.8 }, colors: ["#14f195"] });
+    }
+
+    // Level 2 Step 3 requires isSigner to be toggled
+    if (store.currentLevel === 2 && store.currentStep === 3 && updates.isSigner === true) {
+      store.setIsSignerToggled(true);
+      store.advanceStep();
+      const dialogue = config.dialogue[3];
+      if (dialogue) {
+        store.setSenseiMessage(dialogue.successMessage, "happy");
+        triggerSenseiVoice(t(dialogue.successMessage));
+      }
+      store.completeLevel();
+      confetti({ particleCount: 150, spread: 100, origin: { x: 0.5, y: 0.5 }, colors: ["#14f195", "#9945ff", "#f0f056"] });
+    }
+  }, [setNodes, store, config, t]);
+
+  const editModalNode = useMemo(() => nodes.find((n) => n.id === editModalNodeId) || null, [nodes, editModalNodeId]);
+
+  const handleCodeOverride = useCallback((code: string) => {
+    if (store.currentLevel === 3 && store.currentStep === 0 && code.includes("// GenesisHub")) {
+      store.setCodeOverrideString(code);
+      store.completeLevel();
+      const dialogue = config.dialogue[0];
+      if (dialogue) {
+        store.setSenseiMessage(dialogue.successMessage, "excited");
+        triggerSenseiVoice(t(dialogue.successMessage));
+      }
+      confetti({ particleCount: 150, spread: 100, origin: { x: 0.5, y: 0.5 }, colors: ["#14f195", "#9945ff", "#f0f056"] });
+    }
+
+    if (store.currentLevel === 0 && store.currentStep === 4 && code.includes("// Ready")) {
+      store.advanceStep();
+      const dialogue = config.dialogue[4];
+      if (dialogue) {
+        store.setSenseiMessage(dialogue.successMessage, "happy");
+        triggerSenseiVoice(t(dialogue.successMessage));
+      }
+      confetti({ particleCount: 150, spread: 100, origin: { x: 0.5, y: 0.5 }, colors: ["#14f195", "#9945ff"] });
+    }
+  }, [store, config, t]);
 
   // ── MiniMap colors ────────────────────────────────────────────────────
   const minimapStyle = useMemo(
@@ -246,38 +358,66 @@ export default function DojoCanvas() {
   }, []);
 
   return (
-    <div className="flex-1 relative" ref={reactFlowWrapper}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        nodeTypes={nodeTypes}
-        fitView
-        proOptions={{ hideAttribution: true }}
-        defaultEdgeOptions={{
-          animated: true,
-          style: { stroke: "#14f195", strokeWidth: 2 },
-        }}
-        className="builder-canvas"
-      >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1.5}
-          color={theme === "dark" ? "rgba(148,163,184,0.15)" : "rgba(100,116,139,0.2)"}
+    <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 relative" ref={reactFlowWrapper}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onNodeDoubleClick={onNodeDoubleClick}
+          nodeTypes={nodeTypes}
+          fitView
+          proOptions={proOptions}
+          defaultEdgeOptions={defaultEdgeOptions}
+          className="builder-canvas"
+        >
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={20}
+            size={1.5}
+            color={theme === "dark" ? "rgba(148,163,184,0.15)" : "rgba(100,116,139,0.2)"}
+          />
+          <Controls showInteractive={false} className="!hidden" />
+          <MiniMap
+            style={minimapStyle}
+            nodeColor={miniMapNodeColor}
+            maskColor={theme === "dark" ? "rgba(15,23,42,0.7)" : "rgba(241,245,249,0.7)"}
+            className="!rounded-xl !border !border-card-border !shadow-lg"
+          />
+        </ReactFlow>
+
+        <NodeEditModal
+          node={editModalNode}
+          onClose={() => setEditModalNodeId(null)}
+          onSave={handleSaveNodeEdit}
         />
-        <Controls showInteractive={false} className="!hidden" />
-        <MiniMap
-          style={minimapStyle}
-          nodeColor={miniMapNodeColor}
-          maskColor={theme === "dark" ? "rgba(15,23,42,0.7)" : "rgba(241,245,249,0.7)"}
-          className="!rounded-xl !border !border-card-border !shadow-lg"
+      </div>
+
+      <div className={`shrink-0 border-l border-card-border bg-card-bg transition-all duration-300 relative ${codePreviewOpen ? "w-[350px]" : "w-12"}`}>
+        {!codePreviewOpen && (
+           <button 
+             onClick={() => toggleCodePreview(true)}
+             className={`absolute top-4 left-1/2 -translate-x-1/2 p-2 rounded-lg bg-surface text-muted hover:text-foreground transition-all ${
+               (store.currentLevel === 3 || (store.currentLevel === 0 && store.currentStep === 3)) 
+                 ? "animate-pulse ring-2 ring-neon-green text-neon-green" 
+                 : ""
+             }`}
+             title="Open Code Preview"
+           >
+             <PanelLeftOpen size={18} />
+           </button>
+        )}
+        <CodePreviewPanel 
+          code={codeOutput} 
+          isOpen={codePreviewOpen} 
+          onToggle={() => toggleCodePreview(false)} 
+          onChangeCodeOverride={handleCodeOverride} 
         />
-      </ReactFlow>
+      </div>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { Link2, Plus, Trash2 } from "lucide-react";
 import type { CPINodeData, StructField } from "../codegen";
+import DeleteButton from "./DeleteButton";
 
 type CPINodeType = Node<CPINodeData>;
 
@@ -48,6 +49,7 @@ function CPINode({ id, data, selected }: NodeProps<CPINodeType>) {
       className="relative group"
       style={{ minWidth: 280 }}
     >
+      <DeleteButton id={id} type="node" />
       {/* Target Handle (top) */}
       <Handle
         type="target"

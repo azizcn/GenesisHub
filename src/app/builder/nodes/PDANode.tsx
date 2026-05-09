@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { KeyRound, Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import type { PDANodeData } from "../codegen";
+import DeleteButton from "./DeleteButton";
 
 type PDANodeType = Node<PDANodeData>;
 
@@ -59,6 +60,7 @@ function PDANode({ id, data, selected }: NodeProps<PDANodeType>) {
       className="relative group"
       style={{ minWidth: 280 }}
     >
+      <DeleteButton id={id} type="node" />
       {/* Target Handle (top) */}
       <Handle
         type="target"

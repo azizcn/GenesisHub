@@ -3,7 +3,7 @@
 import { create } from "zustand";
 
 // ── Types ───────────────────────────────────────────────────────────────
-export type TutorialLevel = 1 | 2 | 3;
+export type TutorialLevel = 0 | 1 | 2 | 3 | 4;
 export type NodePlacementState = "ghost" | "placed" | "error";
 export type EdgeConnectionState = "pending" | "connected" | "error";
 export type SenseiMood = "neutral" | "happy" | "angry" | "excited";
@@ -15,6 +15,8 @@ export interface TutorialState {
   totalSteps: number;
   completedLevels: number[];
   levelCompleted: boolean;
+  isSignerToggled: boolean;
+  codeOverrideString: string;
 
   // Node / edge validation states
   nodeStates: Record<string, NodePlacementState>;
@@ -23,16 +25,21 @@ export interface TutorialState {
   // Sensei
   senseiMessage: string;
   senseiMood: SenseiMood;
+  activeSenseiTopic: string | null;
 
   // Actions
   startLevel: (level: TutorialLevel, totalSteps: number) => void;
   advanceStep: () => void;
+  setIsSignerToggled: (val: boolean) => void;
+  setCodeOverrideString: (val: string) => void;
   placeNode: (ghostId: string) => void;
   triggerNodeError: (ghostId: string) => void;
   clearNodeError: (ghostId: string) => void;
   connectEdge: (edgeId: string) => void;
   triggerEdgeError: (edgeId: string) => void;
   setSenseiMessage: (text: string, mood: SenseiMood) => void;
+  triggerSenseiHelp: (topicKey: string) => void;
+  clearSenseiHelp: () => void;
   resetLevel: () => void;
   completeLevel: () => void;
 }
@@ -54,17 +61,20 @@ export function triggerSenseiVoice(text: string): void {
 
 // ── Store ───────────────────────────────────────────────────────────────
 export const useTutorialStore = create<TutorialState>((set, get) => ({
-  currentLevel: 1,
+  currentLevel: 0,
   currentStep: 0,
   totalSteps: 0,
   completedLevels: [],
   levelCompleted: false,
+  isSignerToggled: false,
+  codeOverrideString: "",
 
   nodeStates: {},
   edgeStates: {},
 
-  senseiMessage: "Welcome to the Dojo, young builder. Let's forge your first Solana Program! 🥷",
+  senseiMessage: "dojo.welcome",
   senseiMood: "neutral",
+  activeSenseiTopic: null,
 
   startLevel: (level, totalSteps) =>
     set({
@@ -72,14 +82,21 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
       currentStep: 0,
       totalSteps,
       levelCompleted: false,
+      isSignerToggled: false,
+      codeOverrideString: "",
       nodeStates: {},
       edgeStates: {},
-      senseiMessage: level === 1
-        ? "Level 1: Hello World! Every Solana Program starts with a single Instruction. Let's build one, step by step."
+      senseiMessage: level === 0 
+        ? "dojo.level0.intro"
+        : level === 1
+        ? "dojo.level1.intro"
         : level === 2
-          ? "Level 2: Basic Counter! Now we store state on-chain using a PDA. Compute Units are cheap — let's increment!"
-          : "Level 3: Token Transfer! Time to move SOL between accounts. Watch those Signers! 🔐",
+          ? "dojo.level2.intro"
+          : level === 3
+            ? "dojo.level3.intro"
+            : "dojo.level4.intro",
       senseiMood: "excited",
+      activeSenseiTopic: null,
     }),
 
   advanceStep: () => {
@@ -89,7 +106,7 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
       set({
         currentStep: nextStep,
         levelCompleted: true,
-        senseiMessage: "Outstanding! You have mastered this level. Your Program is ready to deploy! 🚀",
+        senseiMessage: "dojo.levelMastered",
         senseiMood: "excited",
       });
     } else {
@@ -99,6 +116,9 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
       });
     }
   },
+
+  setIsSignerToggled: (val) => set({ isSignerToggled: val }),
+  setCodeOverrideString: (val) => set({ codeOverrideString: val }),
 
   placeNode: (ghostId) =>
     set((state) => ({
@@ -128,6 +148,9 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
   setSenseiMessage: (text, mood) =>
     set({ senseiMessage: text, senseiMood: mood }),
 
+  triggerSenseiHelp: (topicKey) => set({ activeSenseiTopic: topicKey }),
+  clearSenseiHelp: () => set({ activeSenseiTopic: null }),
+
   resetLevel: () => {
     const { currentLevel, totalSteps } = get();
     set({
@@ -135,7 +158,7 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
       levelCompleted: false,
       nodeStates: {},
       edgeStates: {},
-      senseiMessage: "Let's try again. A true builder never gives up! 🥷",
+      senseiMessage: "dojo.tryAgain",
       senseiMood: "neutral",
     });
     // Re-trigger startLevel to reset dialogue
@@ -148,7 +171,7 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
         ? state.completedLevels
         : [...state.completedLevels, state.currentLevel],
       levelCompleted: true,
-      senseiMessage: "Level complete! You've earned your next belt, builder. 🏆",
+      senseiMessage: "dojo.levelComplete",
       senseiMood: "excited",
     })),
 }));

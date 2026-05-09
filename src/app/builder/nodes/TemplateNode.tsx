@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { Sparkles, Coins, Image } from "lucide-react";
 import type { TemplateNodeData } from "../codegen";
+import DeleteButton from "./DeleteButton";
 
 type TemplateNodeType = Node<TemplateNodeData>;
 
@@ -29,6 +30,7 @@ function TemplateNode({ id, data, selected }: NodeProps<TemplateNodeType>) {
       className="relative"
       style={{ minWidth: 240 }}
     >
+      <DeleteButton id={id} type="node" />
       <Handle
         type="target"
         position={Position.Top}
